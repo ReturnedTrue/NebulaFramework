@@ -31,7 +31,7 @@ jobs:
 
       - name: Create release directory and zip file
         run: |
-          md release
+          mkdir release
           zip -r "release/NebulaFramework.zip" ./
 
       - name: Publish to roblox
