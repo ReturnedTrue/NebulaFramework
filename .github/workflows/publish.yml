@@ -23,9 +23,7 @@ jobs:
 
       - name: Bump version
         run: |
-          cd "src\Shared\Private"
-          echo return "${{ env.RELEASE_VERSION }}"; > Version.lua
-          cd "..\..\..\"
+          echo return "${{ env.RELEASE_VERSION }}"; > "src/Shared/Private/Version.lua"
 
       - name: Build into rbxlx
         run: |
