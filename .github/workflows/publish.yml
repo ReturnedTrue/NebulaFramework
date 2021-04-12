@@ -23,18 +23,18 @@ jobs:
 
       - name: Bump version
         run: |
-          echo 'return \"${{ env.RELEASE_VERSION }}\";' > "src/Shared/Private/Version.lua"
-
-      - name: Build into rbxlx
-        run: |
-          rojo build -o place.rbxlx
+          echo 'return "${{ env.RELEASE_VERSION }}";' > "src/Shared/Private/Version.lua"
 
       - name: Create release directory and zip file
         run: |
           mkdir release
           zip -r "release/NebulaFramework.zip" ./
 
-      - name: Publish to roblox
+      - name: Build into rbxlx
+        run: |
+          rojo build -o place.rbxlx
+
+      - name: Package and publish to roblox
         env:
           REMODEL_AUTH: ${{ secrets.ROBLOX_COOKIE }}
         run: |
