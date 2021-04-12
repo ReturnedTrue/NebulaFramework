@@ -23,11 +23,16 @@ jobs:
 
       - name: Bump version
         run: |
-          echo return "${{ env.RELEASE_VERSION }}"; > "src/Shared/Private/Version.lua"
+          echo 'return \"${{ env.RELEASE_VERSION }}\";' > "src/Shared/Private/Version.lua"
 
       - name: Build into rbxlx
         run: |
           rojo build -o place.rbxlx
+
+      - name: Create release directory and zip file
+        run: |
+          md release
+          zip -r "release/NebulaFramework.zip" ./
 
       - name: Publish to roblox
         env:
@@ -39,6 +44,7 @@ jobs:
         uses: svenstaro/upload-release-action@2.2.1
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: NebulaFramework.rbxmx
-          asset_name: NebulaFramework.rbxmx
+          file: release/*
           tag: ${{ github.ref }}
+          file_glob: true
+          overwrite: true

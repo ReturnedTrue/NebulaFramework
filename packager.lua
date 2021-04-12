@@ -16,5 +16,5 @@ CreateFolder("ServerScriptService", file.ServerScriptService.NebulaInternal);
 CreateFolder("StarterPlayerScripts", file.StarterPlayer.StarterPlayerScripts.NebulaInternal);
 CreateFolder("ReplicatedStorage", file.ReplicatedStorage.NebulaInternal);
 
-remodel.writeModelFile(packageFolder, "NebulaFramework.rbxmx");
+remodel.writeModelFile(packageFolder, "release/NebulaFramework.rbxmx");
 remodel.writeExistingModelAsset(packageFolder, ASSET_ID);
