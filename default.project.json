@@ -1,0 +1,52 @@
+{
+  "name": "NebulaFramework",
+  "tree": {
+    "$className": "DataModel",
+
+    "ServerScriptService": {
+        "NebulaInternal": {
+            "$path": "src/Server"
+        }
+    },
+
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "NebulaInternal": {
+            "$path": "src/Client"
+        }        
+      }
+    },
+    
+    "ReplicatedStorage": {
+      "NebulaInternal": {
+        "$path": "src/Shared"
+      }
+    },
+
+    "Workspace": {
+      "$properties": {
+        "FilteringEnabled": true
+      }
+    },
+
+    "Lighting": {
+      "$properties": {
+        "Ambient": [
+          0,
+          0,
+          0
+        ],
+        "Brightness": 2,
+        "GlobalShadows": true,
+        "Outlines": false,
+        "Technology": "Voxel"
+      }
+    },
+
+    "SoundService": {
+      "$properties": {
+        "RespectFilteringEnabled": true
+      }
+    }
+  }
+}

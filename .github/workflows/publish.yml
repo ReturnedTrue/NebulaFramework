@@ -1,0 +1,43 @@
+name: Publisher
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Publish NebulaFramework
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Install foreman
+        uses: Roblox/setup-foreman@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Bump version
+        run: |
+          cd src\Shared\Private
+          echo return "${{ github.ref }}"; > Version.lua
+          cd ..\..\..\
+
+      - name: Build into rbxlx
+        run: |
+          rojo build -o place.rbxlx
+
+      - name: Publish to roblox
+        env:
+          REMODEL_AUTH: ${{ secrets.ROBLOX_COOKIE }}
+        run: |
+          remodel run packager.lua
+
+      - name: Release to GitHub
+        uses: svenstaro/upload-release-action@2.2.1
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: NebulaFramework.rbxmx
+          asset_name: NebulaFramework.rbxmx
+          tag: ${{ github.ref }}
