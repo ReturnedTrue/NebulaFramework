@@ -39,11 +39,13 @@ jobs:
           REMODEL_AUTH: ${{ secrets.ROBLOX_COOKIE }}
         run: |
           remodel run packager.lua
+          mv "release/packaged.rbxmx" "release/NebulaFramework_${{ env.RELEASE_VERSION }}"
 
       - name: Release to GitHub
         uses: svenstaro/upload-release-action@2.2.1
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
+          release_name: ${{ env.RELEASE_VERSION }}
           file: release/*
           tag: ${{ github.ref }}
           file_glob: true
