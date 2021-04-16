@@ -12,22 +12,22 @@ Logger.__index = Logger;
 
 function Logger.new(scriptName: string)
     local self = setmetatable({}, Logger);
-    self.prefix = ("[%s]"):format(scriptName);
+    self.Prefix = ("[%s]"):format(scriptName);
 
     return self;
 end
 
 function Logger:Log(...: string)
-    print(self.prefix, ...);
+    print(self.Prefix, ...);
 end
 
 function Logger:Warn(...: string)
-    warn(self.prefix, ...)
+    warn(self.Prefix, ...)
 end
 
 function Logger:Fatal(...: string)
     local message = ("%s %s"):format(
-        self.prefix,
+        self.Prefix,
         table.concat({...}, " ")
     );
 
