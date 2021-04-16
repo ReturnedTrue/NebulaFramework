@@ -28,7 +28,7 @@ jobs:
       - name: Create release directory and zip file
         run: |
           mkdir release
-          zip -r "release/NebulaFramework.zip" ./
+          zip -r "release/NebulaFramework_${{ env.RELEASE_VERSION }}.zip" ./
 
       - name: Build into rbxlx
         run: |

@@ -2,7 +2,7 @@
 
     NebulaFramework/Logger
     > Author: ReturnedTrue
-    > Date: 07/07/2021
+    > Date: 07/04/2021
     > License: MIT
 
 --]]
