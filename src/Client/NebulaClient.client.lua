@@ -81,6 +81,8 @@ end
 function Main()
     Debug:Log("Starting up on NebulaFramework", require(NebulaShared.Private.Version));
 
+    NebulaClient.LocalPlayer = NebulaClient.Services.Players.LocalPlayer;
+
     local containers = {
         {NebulaClient.Services.StarterPlayer.StarterPlayerScripts, NebulaClient.Client},
         {NebulaClient.Services.ReplicatedFirst, NebulaClient.ClientStorage},
