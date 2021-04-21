@@ -10,9 +10,12 @@
 local Util = {};
 
 function Util.GetModuleAttributes(module: ModuleScript)
+    local attributes = module:GetAttributes();
+
     return {
-        Ignore = module:GetAttribute("Nebula_Ignore") == true,
-        TopLevel = module:GetAttribute("Nebula_TopLevel") == true,
+        Ignore = attributes["Nebula_Ignore"] == true,
+        TopLevel = attributes["Nebula_TopLevel"] == true,
+        NormalModule = attributes["Nebula_NormalModule"] == true
     };
 end
 

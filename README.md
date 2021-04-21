@@ -49,7 +49,8 @@ However, if a function is returned then it will be called at the same time as wh
 Modules with certain attributes can have different functionalities:
 
 `Nebula_Ignore` (**boolean**) - the module will be ignored by Nebula if true, it won't be loaded even when LoadModule is called on it <br />
-`Nebula_TopLevel` (**boolean**) - the module will be added at top level (ie. self.Module or Nebula.Module), as well as under it's holding table. It is not recommended to use this on modules loaded with LoadModule, it will only be added to the top level of modules after it.
+`Nebula_NormalModule` (**boolean**) - the module won't be injected nor will any methods used by nebula be called <br />
+`Nebula_TopLevel` (**boolean**) - the module will be added at top level (ie. self.Module or Nebula.Module), as well as under it's holding table. It is not recommended to use this on modules loaded with LoadModule, it will only be added to the top level of modules after it. <br />
 
 # Examples
 ServerStorage/Nebula/EventDispatcher

@@ -28,7 +28,7 @@ local AddingQueue = ModuleQueue.new(false, Debug);
 local StartingQueue = ModuleQueue.new(true, Debug);
 local UpdateList = {};
 
-function NebulaClient.LoadModule(module: ModuleScript, holder: table)
+function NebulaClient.LoadModule(module: ModuleScript, holder: table, normalModule: boolean)
     local response = require(module);
     local info = {
         Response = response,
@@ -47,33 +47,36 @@ function NebulaClient.LoadModule(module: ModuleScript, holder: table)
         StartingQueue:Add(info);
 
     elseif (info.Type == "table") then
-        Util.Inject(info, NebulaClient);
         AddingQueue:Add(info);
 
-        if (response.Load) then
-            LoadingQueue:Add(info);
-        end
+        if ((not normalModule) and (not info.Attributes.NormalModule)) then
+            Util.Inject(info, NebulaClient, Debug);
 
-        if (response.Start) then
-            StartingQueue:Add(info);
-        end
+            if (response.Load) then
+                LoadingQueue:Add(info);
+            end
 
-        if (response.Update) then
-            table.insert(UpdateList, response);
+            if (response.Start) then
+                StartingQueue:Add(info);
+            end
+
+            if (response.Update) then
+                table.insert(UpdateList, response);
+            end
         end
     else
         Debug:Warn("Module", module.Name, "returned type", info.Type, "which is not supported");
     end
 end
 
-function LoadFolder(folder: Folder, target: table)
+function LoadFolder(folder: Folder, target: table, normalModules: boolean)
     for _, child in ipairs(folder:GetChildren()) do
         if (child:IsA("Folder")) then
             target[child.Name] = {};
-            LoadFolder(child, target[child.Name]);
+            LoadFolder(child, target[child.Name], normalModules);
 
         elseif (child:IsA("ModuleScript")) then
-            NebulaClient.LoadModule(child, target);
+            NebulaClient.LoadModule(child, target, normalModules);
         end
     end
 end
@@ -84,16 +87,16 @@ function Main()
     NebulaClient.LocalPlayer = NebulaClient.Services.Players.LocalPlayer;
 
     local containers = {
-        {NebulaClient.Services.StarterPlayer.StarterPlayerScripts, NebulaClient.Client},
-        {NebulaClient.Services.ReplicatedFirst, NebulaClient.ClientStorage},
-        {NebulaClient.Services.ReplicatedStorage, NebulaClient.Replicated},
+        {NebulaClient.Services.StarterPlayer.StarterPlayerScripts, NebulaClient.Client, false},
+        {NebulaClient.Services.ReplicatedFirst, NebulaClient.ClientStorage, false},
+        {NebulaClient.Services.ReplicatedStorage, NebulaClient.Replicated, true},
     };
 
     for _, container in ipairs(containers) do
         local folder = container[1]:FindFirstChild("Nebula");
 
         if (folder) then
-            LoadFolder(folder, container[2]);
+            LoadFolder(folder, container[2], container[3]);
         end
     end
 
