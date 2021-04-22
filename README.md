@@ -22,23 +22,25 @@ A folder named `Nebula` must be placed under certain services depending on the c
 On the server: ServerScriptService, ServerStorage or ReplicatedStorage. <br />
 On the client: StarterPlayerScripts, ReplicatedFirst or ReplicatedStorage. <br />
 
--- Table injected properties --
+-- Table injected properties -- <br />
+If a table is returned by a module, attribute `Nebula_NormalModule` is false/nil (see below), then these properties are injected.
 
 Both contexts:
 
 `LoadModule` - a static method to load any module into Nebula, pass the ModuleScript and which table to add it to (ie. self.Server) <br />
 `Services` - a table of all the Roblox services, ie. Services.Players <br />
-`Replicated` - contains all the required modules from ReplicatedStorage/Nebula <br />
+`Replicated` - contains all the modules from ReplicatedStorage/Nebula (these modules won't be injected nor ran in Nebula either) <br />
 
 Server:
 
-`Server` - contains all the required modules from ServerScriptService/Nebula <br />
-`Storage` - contains all the required modules from ServerStorage/Nebula <br />
+`Server` - contains all the modules from ServerScriptService/Nebula <br />
+`Storage` - contains all the modules from ServerStorage/Nebula <br />
 
 Client:
 
-`Client` - contains all the required modules from StarterPlayerScripts/Nebula <br />
-`ClientStorage` - contains all the required modules from ReplicatedFirst/Nebula <br />
+`Server` - contains all the modules from ServerScriptService/Nebula but only of the methods which are prefixed with `Client_` (the prefix is removed) <br />
+`Client` - contains all the modules from StarterPlayerScripts/Nebula <br />
+`ClientStorage` - contains all the modules from ReplicatedFirst/Nebula <br />
 
 Then, the table's optional Load method will be called. Once all Load methods are called on, the optional Start method will be called. This is the best place to use other modules. Afterwards, the table's optional Update method will be called on either Heartbeat (server) or RenderStepped (client).
 
@@ -94,4 +96,33 @@ function EventConnector:Start()
 end
 
 return EventConnector;
+```
+
+___
+
+ServerScriptService/Nebula/MessageGiver
+```lua
+local MessageGiver = {};
+
+function MessageGiver:Client_GetMessage(player, theirMessage)
+	return self.InnerMessage:format(player.Name, theirMessage);
+end
+
+function MessageGiver:Load()
+	self.InnerMessage = "Hello, %s! You told me: %s";
+end
+
+return MessageGiver;
+```
+<br />
+
+StarterPlayerScripts/Nebula/MessageAnnouncer
+```lua
+local MessageAnnouncer = {};
+
+function MessageAnnouncer:Start()
+	print(self.Server.MessageGiver:GetMessage("hi"));
+end
+
+return MessageAnnouncer;
 ```

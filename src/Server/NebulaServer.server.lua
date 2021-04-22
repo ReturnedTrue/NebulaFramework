@@ -7,14 +7,15 @@
 
 --]]
 
-local NebulaShared = game:GetService("ReplicatedStorage").NebulaInternal;
+local InternalShared = game:GetService("ReplicatedStorage").NebulaInternal;
 
-local ModuleQueue = require(NebulaShared.Private.ModuleQueue);
-local Logger = require(NebulaShared.Private.Logger);
-local Util = require(NebulaShared.Private.Util);
+local ModuleQueue = require(InternalShared.Private.ModuleQueue);
+local Logger = require(InternalShared.Private.Logger);
+local Constants = require(InternalShared.Private.Constants);
+local Util = require(InternalShared.Private.Util);
 
 local NebulaServer = {
-    Services = require(NebulaShared.Public.Services),
+    Services = require(InternalShared.Public.Services),
     Server = {},
     Storage = {},
     Replicated = {},
@@ -22,10 +23,12 @@ local NebulaServer = {
 
 local Debug = Logger.new("NebulaServer");
 
-local LoadingQueue = ModuleQueue.new(false, Debug);
-local AddingQueue = ModuleQueue.new(false, Debug);
-local StartingQueue = ModuleQueue.new(true, Debug);
+local LoadingQueue = ModuleQueue.new(false);
+local AddingQueue = ModuleQueue.new(false);
+local StartingQueue = ModuleQueue.new(true);
 local UpdateList = {};
+
+local RemotesFolder = Instance.new("Folder");
 
 function NebulaServer.LoadModule(module: ModuleScript, holder: table, normalModule: boolean)
     local response = require(module);
@@ -79,8 +82,30 @@ function LoadFolder(folder: Folder, target: table, normalModules: boolean)
     end
 end
 
+function CreateRemotes(item: table)
+    local moduleFolder = Instance.new("Folder");
+    moduleFolder.Name = item.Name;
+
+    for key in pairs(item.Response) do
+        local methodName = key:match(Constants.CLIENT_METHOD_PATTERN);
+
+        if (methodName) then
+            local remoteFunction = Instance.new("RemoteFunction");
+            remoteFunction.Name = methodName;
+
+            remoteFunction.OnServerInvoke = function(...)
+                return item.Response[key](item.Response, ...);
+            end
+
+            remoteFunction.Parent = moduleFolder;
+        end
+    end
+
+    moduleFolder.Parent = RemotesFolder;
+end
+
 function Main()
-    Debug:Log("Starting up on NebulaFramework", require(NebulaShared.Private.Version));
+    Debug:Log("Starting up on NebulaFramework", require(InternalShared.Private.Version));
 
     local containers = {
         {NebulaServer.Services.ServerScriptService, NebulaServer.Server, false},
@@ -111,6 +136,10 @@ function Main()
 
         if (item.Holder) then
             item.Holder[item.Name] = item.Response;
+
+            if (item.Holder == NebulaServer.Server) then
+                CreateRemotes(item);
+            end
         end
     end)
 
@@ -128,6 +157,8 @@ function Main()
         end
     end)
 
+    RemotesFolder.Name = Constants.REMOTES_FOLDER_NAME;
+    RemotesFolder.Parent = InternalShared;
     Debug:Log("Loaded");
 end
 

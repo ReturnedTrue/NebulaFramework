@@ -7,15 +7,16 @@
 
 --]]
 
-local NebulaShared = game:GetService("ReplicatedStorage"):WaitForChild("NebulaInternal");
+local InternalShared = game:GetService("ReplicatedStorage"):WaitForChild("NebulaInternal");
 
-local ModuleQueue = require(NebulaShared.Private.ModuleQueue);
-local Logger = require(NebulaShared.Private.Logger);
-local Util = require(NebulaShared.Private.Util);
+local ModuleQueue = require(InternalShared.Private.ModuleQueue);
+local Logger = require(InternalShared.Private.Logger);
+local Constants = require(InternalShared.Private.Constants);
+local Util = require(InternalShared.Private.Util);
 
 local NebulaClient = {
-    Services = require(NebulaShared.Public.Services),
-    -- Server = {},
+    Services = require(InternalShared.Public.Services),
+    Server = {},
     Client = {},
     ClientStorage = {},
     Replicated = {},
@@ -23,9 +24,9 @@ local NebulaClient = {
 
 local Debug = Logger.new("NebulaClient");
 
-local LoadingQueue = ModuleQueue.new(false, Debug);
-local AddingQueue = ModuleQueue.new(false, Debug);
-local StartingQueue = ModuleQueue.new(true, Debug);
+local LoadingQueue = ModuleQueue.new(false);
+local AddingQueue = ModuleQueue.new(false);
+local StartingQueue = ModuleQueue.new(true);
 local UpdateList = {};
 
 function NebulaClient.LoadModule(module: ModuleScript, holder: table, normalModule: boolean)
@@ -82,7 +83,7 @@ function LoadFolder(folder: Folder, target: table, normalModules: boolean)
 end
 
 function Main()
-    Debug:Log("Starting up on NebulaFramework", require(NebulaShared.Private.Version));
+    Debug:Log("Starting up on NebulaFramework", require(InternalShared.Private.Version));
 
     NebulaClient.LocalPlayer = NebulaClient.Services.Players.LocalPlayer;
 
@@ -99,6 +100,32 @@ function Main()
             LoadFolder(folder, container[2], container[3]);
         end
     end
+
+    do
+        local RemoteFolder = InternalShared:FindFirstChild(Constants.REMOTES_FOLDER_NAME);
+
+        if (not RemoteFolder) then
+            Debug:Log("Waiting on the server");
+            RemoteFolder = InternalShared:WaitForChild(Constants.REMOTES_FOLDER_NAME);
+        end
+
+        for _, child in ipairs(RemoteFolder:GetChildren()) do
+            if (child:IsA("Folder")) then
+                local moduleTable = {};
+
+                for _, remote in ipairs(child:GetChildren()) do
+                    if (remote:IsA("RemoteFunction")) then
+                        moduleTable[remote.Name] = function(_, ...)
+                            return remote:InvokeServer(...);
+                        end
+                    end
+                end
+
+                NebulaClient.Server[child.Name] = moduleTable;
+            end
+        end
+    end
+
 
     LoadingQueue:IterateAndOverride(function(item)
         item.Response:Load();

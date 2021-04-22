@@ -10,11 +10,10 @@
 local ModuleQueue = {};
 ModuleQueue.__index = ModuleQueue;
 
-function ModuleQueue.new(asynchonrous: boolean, logger: table)
+function ModuleQueue.new(asynchonrous: boolean)
     local self = setmetatable({}, ModuleQueue);
 
     self.Items = {};
-    self.Debug = logger;
     self.Async = asynchonrous;
     self.Override = false;
 
@@ -40,7 +39,7 @@ function ModuleQueue:IterateAndOverride(callback: (any) -> void)
         end
 
         if (response[1] == false) then
-            self.Debug:Warn("Module", item.Name, "errored:", response[2]);
+            error(response[2], 0);
         end
     end
 
