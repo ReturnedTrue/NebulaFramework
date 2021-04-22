@@ -1,5 +1,7 @@
 # NebulaFramework
-A (very) early prototype of a feature-rich framework inspired by AGF.
+An early in development feature-rich framework which makes communication between scripts seamless. 
+
+Inspired by AGF.
 
 # Installation
 -- Roblox Studio --
@@ -15,7 +17,7 @@ Server - ServerScriptService <br />
 Shared - ReplicatedStorage <br />
 
 # Usage
-**NebulaFramework currently has no communication between the client and the server, this is under development.**
+**NebulaFramework currently in early-development, please use with caution**
 
 A folder named `Nebula` must be placed under certain services depending on the context. Nebula will run any ModuleScript under these folders.
 
