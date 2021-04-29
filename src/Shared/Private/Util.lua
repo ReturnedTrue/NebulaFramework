@@ -19,6 +19,14 @@ function Util.GetModuleAttributes(module: ModuleScript)
     };
 end
 
+function Util.Async(foo: any, ...: any)
+    local success, message = coroutine.resume(coroutine.create(foo), ...);
+
+    if (success == false) then
+        error(message, 0);
+    end
+end
+
 function Util.Inject(item: table, injectionTable: table, debug: table)
     for key in pairs(injectionTable) do
         if (item.Response[key] ~= nil) then

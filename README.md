@@ -29,7 +29,7 @@ If a table is returned by a module, attribute `Nebula_NormalModule` is false/nil
 
 Both contexts:
 
-`LoadModule` - a static method to load any module into Nebula, pass the ModuleScript and which table to add it to (ie. self.Server) <br />
+`AddModule` - a static method to add any module into Nebula, pass the ModuleScript and which table to add it to (ie. self.Server) <br />
 `Services` - a table of all the Roblox services, ie. Services.Players <br />
 `Replicated` - contains all the modules from ReplicatedStorage/Nebula (these modules won't be injected nor ran in Nebula either) <br />
 

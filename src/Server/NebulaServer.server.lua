@@ -9,12 +9,13 @@
 
 local InternalShared = game:GetService("ReplicatedStorage").NebulaInternal;
 
-local ModuleQueue = require(InternalShared.Private.ModuleQueue);
 local Logger = require(InternalShared.Private.Logger);
 local Constants = require(InternalShared.Private.Constants);
 local Util = require(InternalShared.Private.Util);
 
 local NebulaServer = {
+    AddModule = InitModule,
+
     Services = require(InternalShared.Public.Services),
     Server = {},
     Storage = {},
@@ -23,70 +24,65 @@ local NebulaServer = {
 
 local Debug = Logger.new("NebulaServer");
 
-local LoadingQueue = ModuleQueue.new(false);
-local AddingQueue = ModuleQueue.new(false);
-local StartingQueue = ModuleQueue.new(true);
+local HoistingList = {};
+local StartingList = {};
 local UpdateList = {};
 
-local RemotesFolder = Instance.new("Folder");
+function LoadModule(module: table)
+    module.Response:Load();
+end
 
-function NebulaServer.LoadModule(module: ModuleScript, holder: table, normalModule: boolean)
-    local response = require(module);
-    local info = {
-        Response = response,
-        Type = typeof(response),
-        Holder = holder,
-        Name = module.Name,
-        Attributes = Util.GetModuleAttributes(module),
-    }
-
-    if (info.Attributes.Ignore) then
-        Debug:Log("Ignored module", module.Name);
-        return;
+function HoistModule(module: table)
+    if (module.Attributes.TopLevel) then
+        if (NebulaServer[module.Name]) then
+            Debug:Warn(Debug.WarnMessages.TopLevelDenied, module.Name);
+        else
+            NebulaServer[module.Name] = module.Response;
+        end
     end
 
-    if (info.Type == "function") then
-        StartingQueue:Add(info);
+    if (module.Holder) then
+        module.Holder[module.Name] = module.Response;
+    end
+end
 
-    elseif (info.Type == "table") then
-        AddingQueue:Add(info);
+function InitHoistProcedure()
+    for _, module in ipairs(HoistingList) do
+        HoistModule(module);
+    end
 
-        if ((not normalModule) and (not info.Attributes.NormalModule)) then
-            Util.Inject(info, NebulaServer, Debug);
-            if (response.Load) then
-                LoadingQueue:Add(info);
-            end
+    HoistingList = false;
+end
 
-            if (response.Start) then
-                StartingQueue:Add(info);
-            end
-
-            if (response.Update) then
-                table.insert(UpdateList, response);
-            end
-        end
+function StartModule(module: table)
+    if (module.Type == "function") then
+        Util.Async(module.Response, NebulaServer);
     else
-        Debug:Warn("Module", module.Name, "returned type", info.Type, "which is not supported");
+        Util.Async(module.Response.Start, module.Response)
     end
 end
 
-function LoadFolder(folder: Folder, target: table, normalModules: boolean)
-    for _, child in ipairs(folder:GetChildren()) do
-        if (child:IsA("Folder")) then
-            target[child.Name] = {};
-            LoadFolder(child, target[child.Name], normalModules);
+function InitStartProcedure()
+    for _, module in ipairs(StartingList) do
+        StartModule(module);
+    end
 
-        elseif (child:IsA("ModuleScript")) then
-            NebulaServer.LoadModule(child, target, normalModules);
+    StartingList = false;
+end
+
+function InitUpdateCycle()
+    NebulaServer.Services.RunService.Heartbeat:Connect(function(deltaTime)
+        for _, module in ipairs(UpdateList) do
+            Util.Async(module.Response.Update, module.Response, deltaTime);
         end
-    end
+    end)
 end
 
-function CreateRemotes(item: table)
+function CreateModuleRemotes(name: string, response: table, parentFolder: Folder)
     local moduleFolder = Instance.new("Folder");
-    moduleFolder.Name = item.Name;
+    moduleFolder.Name = name;
 
-    for key in pairs(item.Response) do
+    for key in pairs(response) do
         local methodName = key:match(Constants.CLIENT_METHOD_PATTERN);
 
         if (methodName) then
@@ -94,19 +90,93 @@ function CreateRemotes(item: table)
             remoteFunction.Name = methodName;
 
             remoteFunction.OnServerInvoke = function(...)
-                return item.Response[key](item.Response, ...);
+                return response[key](response, ...);
             end
 
             remoteFunction.Parent = moduleFolder;
         end
     end
 
-    moduleFolder.Parent = RemotesFolder;
+    moduleFolder.Parent = parentFolder;
 end
 
-function Main()
-    Debug:Log("Starting up on NebulaFramework", require(InternalShared.Private.Version));
+function InitRemotes()
+    local remotesFolder = Instance.new("Folder");
 
+    for name, response in pairs(NebulaServer.Server) do
+        CreateModuleRemotes(name, response);
+    end
+
+    remotesFolder.Name = Constants.REMOTES_FOLDER_NAME;
+    remotesFolder.Parent = InternalShared;
+end
+
+function InitModule(moduleScript: ModuleScript, holder: table, normalModule: boolean)
+    local response = require(moduleScript);
+    local module = {
+        Response = response,
+        Type = typeof(response),
+        Holder = holder,
+        Name = moduleScript.Name,
+        Attributes = Util.GetModuleAttributes(moduleScript),
+    }
+
+    if (module.Attributes.Ignore) then
+        Debug:Log(Debug.LogMessages.IgnoredModule, module.Name);
+        return;
+    end
+
+    if (module.Type == "function") then
+        if (StartingList) then
+            table.insert(StartingList, module);
+        else
+            StartModule(module);
+        end
+
+    elseif (module.Type == "table") then
+        if ((not normalModule) and (not module.Attributes.NormalModule)) then
+            Util.Inject(module, NebulaServer, Debug);
+
+            if (response.Load) then
+                LoadModule(module)
+            end
+
+            if (HoistingList) then
+                table.insert(HoistingList, module);
+            else
+                HoistModule(module);
+            end
+
+            if (response.Start) then
+                if (StartingList) then
+                    table.insert(StartingList, module);
+                else
+                    StartModule(module);
+                end
+            end
+
+            if (response.Update) then
+                table.insert(UpdateList, response);
+            end
+        end
+    else
+        Debug:Warn(Debug.WarnMessages.WrongReturnType, module.Name, module.Type);
+    end
+end
+
+function InitFolder(folder: Folder, target: table, normalModules: boolean)
+    for _, child in ipairs(folder:GetChildren()) do
+        if (child:IsA("Folder")) then
+            target[child.Name] = {};
+            InitFolder(child, target[child.Name], normalModules);
+
+        elseif (child:IsA("ModuleScript")) then
+            InitModule(child, target, normalModules);
+        end
+    end
+end
+
+function InitContainers()
     local containers = {
         {NebulaServer.Services.ServerScriptService, NebulaServer.Server, false},
         {NebulaServer.Services.ServerStorage, NebulaServer.Storage, false},
@@ -117,49 +187,21 @@ function Main()
         local folder = container[1]:FindFirstChild("Nebula");
 
         if (folder) then
-            LoadFolder(folder, container[2], container[3]);
+            InitFolder(folder, container[2], container[3]);
         end
     end
+end
 
-    LoadingQueue:IterateAndOverride(function(item)
-        item.Response:Load();
-    end)
+function Main()
+    Debug:Log(Debug.LogMessages.StartingUp, require(InternalShared.Private.Version));
 
-    AddingQueue:IterateAndOverride(function(item)
-        if (item.Attributes.TopLevel) then
-            if (NebulaServer[item.Name]) then
-                Debug:Warn("Cannot add module", item.Name, "at top level since that property already exists");
-            else
-                NebulaServer[item.Name] = item.Response;
-            end
-        end
+    InitContainers();
+    InitHoistProcedure();
+    InitStartProcedure();
+    InitRemotes();
+    InitUpdateCycle();
 
-        if (item.Holder) then
-            item.Holder[item.Name] = item.Response;
-
-            if (item.Holder == NebulaServer.Server) then
-                CreateRemotes(item);
-            end
-        end
-    end)
-
-    StartingQueue:IterateAndOverride(function(item)
-        if (item.Type == "function") then
-            item.Response(NebulaServer);
-        else
-            item.Response:Start();
-        end
-    end)
-
-    NebulaServer.Services.RunService.Heartbeat:Connect(function(deltaTime)
-        for _, module in ipairs(UpdateList) do
-            module:Update(deltaTime);
-        end
-    end)
-
-    RemotesFolder.Name = Constants.REMOTES_FOLDER_NAME;
-    RemotesFolder.Parent = InternalShared;
-    Debug:Log("Loaded");
+    Debug:Log(Debug.LogMessages.Loaded);
 end
 
 Main();
