@@ -87,7 +87,7 @@ function InitServerIntegration()
         remoteFolder = InternalShared:WaitForChild(Constants.REMOTES_FOLDER_NAME);
     end
 
-    for _, child in ipairs(remoteFolder:GetChildren()) do
+    local function CreateRemoteConnections(child: Instance)
         if (child:IsA("Folder")) then
             local moduleTable = {};
 
@@ -102,6 +102,12 @@ function InitServerIntegration()
             NebulaClient.Server[child.Name] = moduleTable;
         end
     end
+
+    for _, child in ipairs(remoteFolder:GetChildren()) do
+        CreateRemoteConnections(child);
+    end
+
+    remoteFolder.ChildAdded:Connect(CreateRemoteConnections);
 end
 
 function InitModule(moduleScript: ModuleScript, holder: table, normalModule: boolean)

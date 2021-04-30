@@ -28,6 +28,8 @@ local HoistingList = {};
 local StartingList = {};
 local UpdateList = {};
 
+local RemotesFolder = Instance.new("Folder");
+
 function LoadModule(module: table)
     module.Response:Load();
 end
@@ -78,11 +80,15 @@ function InitUpdateCycle()
     end)
 end
 
-function CreateModuleRemotes(name: string, response: table, parentFolder: Folder)
-    local moduleFolder = Instance.new("Folder");
-    moduleFolder.Name = name;
+function CreateModuleRemotes(module: table)
+    if (not module.Holder == NebulaServer.Server) then
+        return
+    end
 
-    for key in pairs(response) do
+    local moduleFolder = Instance.new("Folder");
+    moduleFolder.Name = module.Name;
+
+    for key in pairs(module.Response) do
         local methodName = key:match(Constants.CLIENT_METHOD_PATTERN);
 
         if (methodName) then
@@ -90,25 +96,14 @@ function CreateModuleRemotes(name: string, response: table, parentFolder: Folder
             remoteFunction.Name = methodName;
 
             remoteFunction.OnServerInvoke = function(...)
-                return response[key](response, ...);
+                return module.Response[key](module.Response, ...);
             end
 
             remoteFunction.Parent = moduleFolder;
         end
     end
 
-    moduleFolder.Parent = parentFolder;
-end
-
-function InitRemotes()
-    local remotesFolder = Instance.new("Folder");
-
-    for name, response in pairs(NebulaServer.Server) do
-        CreateModuleRemotes(name, response);
-    end
-
-    remotesFolder.Name = Constants.REMOTES_FOLDER_NAME;
-    remotesFolder.Parent = InternalShared;
+    moduleFolder.Parent = RemotesFolder;
 end
 
 function InitModule(moduleScript: ModuleScript, holder: table, normalModule: boolean)
@@ -135,6 +130,7 @@ function InitModule(moduleScript: ModuleScript, holder: table, normalModule: boo
 
     elseif (module.Type == "table") then
         if ((not normalModule) and (not module.Attributes.NormalModule)) then
+            CreateModuleRemotes(module);
             Util.Inject(module, NebulaServer, Debug);
 
             if (response.Load) then
@@ -190,6 +186,11 @@ function InitContainers()
             InitFolder(folder, container[2], container[3]);
         end
     end
+end
+
+function InitRemotes()
+    RemotesFolder.Name = Constants.REMOTES_FOLDER_NAME;
+    RemotesFolder.Parent = InternalShared;
 end
 
 function Main()
