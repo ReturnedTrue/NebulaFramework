@@ -128,3 +128,42 @@ end
 
 return MessageAnnouncer;
 ```
+
+___
+
+ServerScriptService/Nebula/PlayerEvents
+```lua
+local PlayerEvents = {};
+
+function PlayerEvents:Load()
+	self:CreateEvents({"Joined", "Left"});
+
+	self.Services.Players.PlayerAdded:Connect(function(player)
+		self.Events.Joined:FireEveryClient(player.Name);
+	end)
+
+	self.Services.Players.PlayerRemoving:Connect(function(player)
+		self.Events.Left:FireEveryClient(player.Name);
+	end)
+end
+
+return PlayerEvents
+```
+StarterPlayerScripts/Nebula/PlayerWatcher
+```lua
+local PlayerWatcher = {};
+
+function PlayerWatcher:Start()
+	local PlayerEvents = self.Server.PlayerEvents;
+
+	PlayerEvents.Joined:Connect(function(playerName)
+		print(playerName, "has joined");
+	end)
+
+	PlayerEvents.Left:Connect(function(playerName)
+		print(playerName, "has left");
+	end)
+end
+
+return PlayerWatcher;
+```

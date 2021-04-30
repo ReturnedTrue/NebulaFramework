@@ -96,6 +96,9 @@ function InitServerIntegration()
                     moduleTable[remote.Name] = function(_, ...)
                         return remote:InvokeServer(...);
                     end
+
+                elseif (remote:IsA("RemoteEvent")) then
+                    moduleTable[remote.Name] = remote.OnClientEvent;
                 end
             end
 

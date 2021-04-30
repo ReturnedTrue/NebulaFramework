@@ -16,7 +16,10 @@ local LogMessages = {
 
 local WarnMessages = {
     WrongReturnType = {"Module %s returned type %s which is not supported", 1},
-    TopLevelDenied = {"Cannot add module %s at top level as that property already exists", 2}
+    TopLevelDenied = {"Cannot add module %s at top level as that property already exists", 2},
+    OverridingProperty = {"Overriding existing property %s on %s", 3},
+    OnlyServerModules = {"Only modules in the Server can create events", 4},
+    CannotUseMethod = {"This method is only avaliable for use in the Load method", 5}
 };
 
 local ErrorMessages = {

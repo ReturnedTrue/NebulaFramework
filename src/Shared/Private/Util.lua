@@ -19,6 +19,16 @@ function Util.GetModuleAttributes(module: ModuleScript)
     };
 end
 
+function Util.Inject(module: table, injectionTable: table, debug: table)
+    for key in pairs(injectionTable) do
+        if (module.Response[key] ~= nil) then
+            debug:Warn(debug.WarnMessages.OverridingProperty, key, module.Name);
+        end
+
+        module.Response[key] = injectionTable[key];
+    end
+end
+
 function Util.Async(foo: any, ...: any)
     local success, message = coroutine.resume(coroutine.create(foo), ...);
 
@@ -27,14 +37,6 @@ function Util.Async(foo: any, ...: any)
     end
 end
 
-function Util.Inject(item: table, injectionTable: table, debug: table)
-    for key in pairs(injectionTable) do
-        if (item.Response[key] ~= nil) then
-            debug:Warn("Overriding existing property", key, "on", item.Name);
-        end
 
-        item.Response[key] = injectionTable[key];
-    end
-end
 
 return Util;

@@ -30,8 +30,74 @@ local UpdateList = {};
 
 local RemotesFolder = Instance.new("Folder");
 
+function InjectLoadMethods(module: table)
+    local methodsAdded = {};
+    local methods = {
+        CreateEvents = function(self, events: table)
+            if (not self.ModuleRemoteFolder) then
+                Debug:Warn(Debug.WarnMessages.OnlyServerModules);
+                return false;
+            end
+
+            if (self.Events ~= nil) then
+                Debug:Warn(Debug.WarnMessages.OverridingProperty, "Events", module.Name);
+            end
+
+            self.Events = {};
+
+            for _, eventName in ipairs(events) do
+                local remoteEvent = Instance.new("RemoteEvent");
+                remoteEvent.Name = eventName;
+                remoteEvent.Parent = module.ModuleRemotesFolder;
+
+                self.Events[eventName] = {
+                    FireClient = function(_, player: Player, ...)
+                        remoteEvent:FireClient(player, ...);
+                    end,
+
+                    FireEveryClient = function(_, ...)
+                        remoteEvent:FireAllClients(...);
+                    end,
+
+                    FireEveryExcept = function(_, exceptionPlayer: Player, ...)
+                        for _, player in ipairs(self.Services.Players:GetPlayers()) do
+                            if (player ~= exceptionPlayer) then
+                                remoteEvent:FireClient(player, ...);
+                            end
+                        end
+                    end
+                }
+            end
+        end
+    };
+
+    for methodName, methodBody in pairs(methods) do
+        if (module.Response[methodName] ~= nil) then
+            Debug:Warn(Debug.WarnMessages.OverridingProperty, methodName, module.Name);
+        end
+
+        module.Response[methodName] = methodBody;
+        table.insert(methodsAdded, methodName);
+    end
+
+    return methodsAdded;
+end
+
+function RemoveLoadMethods(module: table, methods: table)
+    local function Warning()
+        Debug:Warn(Debug.WarnMessages.CannotUseMethod);
+    end
+
+    for _, methodName in ipairs(methods) do
+        module.Response[methodName] = Warning
+    end
+end
+
 function LoadModule(module: table)
+    local methodsAdded = InjectLoadMethods(module);
+
     module.Response:Load();
+    RemoveLoadMethods(module, methodsAdded);
 end
 
 function HoistModule(module: table)
@@ -82,7 +148,7 @@ end
 
 function CreateModuleRemotes(module: table)
     if (not module.Holder == NebulaServer.Server) then
-        return
+        return false;
     end
 
     local moduleFolder = Instance.new("Folder");
@@ -104,6 +170,8 @@ function CreateModuleRemotes(module: table)
     end
 
     moduleFolder.Parent = RemotesFolder;
+
+    return moduleFolder;
 end
 
 function InitModule(moduleScript: ModuleScript, holder: table, normalModule: boolean)
@@ -130,7 +198,7 @@ function InitModule(moduleScript: ModuleScript, holder: table, normalModule: boo
 
     elseif (module.Type == "table") then
         if ((not normalModule) and (not module.Attributes.NormalModule)) then
-            CreateModuleRemotes(module);
+            module.ModuleRemotesFolder = CreateModuleRemotes(module);
             Util.Inject(module, NebulaServer, Debug);
 
             if (response.Load) then
