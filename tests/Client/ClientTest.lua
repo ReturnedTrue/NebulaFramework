@@ -3,40 +3,42 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage");
 local ScriptObjectives = require(ReplicatedStorage.Tools.ScriptObjectives);
 
 local Test = ScriptObjectives.new(
-    "Server",
+    "Client",
     {
         "RanLoad",
         "RanStart",
         "RanUpdate",
         "ReplicatedDoesLoad",
-        "StorageDoesLoad",
+        "ClientStorageDoesLoad",
+        "ClientDoesLoad",
         "ServerDoesLoad",
-        "EventsAreCreated"
+        "ServerEventsDoLoad"
     }
 );
 
-local ServerTest = {};
+local ClientTest = {};
 
-function ServerTest:Update()
+function ClientTest:Update()
     if (not Test.Completed) then
         Test:SetObjective("RanUpdate", true);
-        Test:OutputResults();
     end
 end
 
-function ServerTest:Start()
+function ClientTest:Start()
     Test:SetObjective("RanStart", true);
 
-    Test:SetObjective("StorageDoesLoad", self.Storage.ExampleModule and self.Storage.ExampleModule:Foo());
+    Test:SetObjective("ClientStorageDoesLoad", self.ClientStorage.ExampleModule and self.ClientStorage.ExampleModule:Foo());
+    Test:SetObjective("ClientDoesLoad", self.Client.ExampleModule and self.Client.ExampleModule:Foo());
+
     Test:SetObjective("ServerDoesLoad", self.Server.ExampleModule and self.Server.ExampleModule:Foo());
+    Test:SetObjective("ServerEventsDoLoad", self.Server.ExampleModule and (self.Server.ExampleModule.ExampleEvent ~= nil));
+
+    Test:OutputResults();
 end
 
-function ServerTest:Load()
+function ClientTest:Load()
     Test:SetObjective("RanLoad", true);
     Test:SetObjective("ReplicatedDoesLoad", self.Replicated.ExampleModule == true);
-
-    self:CreateEvents({"Test"});
-    Test:SetObjective("EventsAreCreated", self.Events and self.Events.Test);
 end
 
-return ServerTest;
+return ClientTest;

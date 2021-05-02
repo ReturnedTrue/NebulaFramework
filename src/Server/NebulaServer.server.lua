@@ -147,7 +147,7 @@ function InitUpdateCycle()
 end
 
 function CreateModuleRemotes(module: table)
-    if (not module.Holder == NebulaServer.Server) then
+    if (module.Holder ~= NebulaServer.Server) then
         return false;
     end
 
