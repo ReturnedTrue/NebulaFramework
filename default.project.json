@@ -4,13 +4,21 @@
     "$className": "DataModel",
 
     "ServerScriptService": {
-        "NebulaInternal": {
-            "$path": "src/Server"
-        }
+      "Nebula": {
+        "$path": "tests/Server"
+      },
+
+      "NebulaInternal": {
+          "$path": "src/Server"
+      }
     },
 
     "StarterPlayer": {
       "StarterPlayerScripts": {
+        "Nebula": {
+          "$path": "tests/Client"
+        },
+
         "NebulaInternal": {
             "$path": "src/Client"
         }        
@@ -18,6 +26,14 @@
     },
     
     "ReplicatedStorage": {
+      "Tools": {
+        "$path": "tests/Tools"
+      },
+
+      "Nebula": {
+        "$path": "tests/Shared"
+      },
+
       "NebulaInternal": {
         "$path": "src/Shared"
       }

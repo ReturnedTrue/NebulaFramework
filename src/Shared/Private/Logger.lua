@@ -41,15 +41,15 @@ function Logger.new(scriptName: string)
 end
 
 function Logger:Log(message: table, ...: string)
-    print(self.Prefix, message[1]:format(...), "[LOG-" + message[2] + "]");
+    print(self.Prefix, message[1]:format(...), "[LOG-" .. message[2] .. "]");
 end
 
 function Logger:Warn(message: table, ...: string)
-    warn(self.Prefix, message[1]:format(...), "[WARN-" + message[2] + "]");
+    warn(self.Prefix, message[1]:format(...), "[WARN-" .. message[2] .. "]");
 end
 
 function Logger:Fatal(message: table, ...: string)
-    error(self.Prefix + " " + message[1]:format(...) + " [ERROR-" + message[2] + "]", 0);
+    error(self.Prefix .. " " .. message[1]:format(...) .. " [ERROR-" .. message[2] .. "]", 0);
 end
 
 return Logger;

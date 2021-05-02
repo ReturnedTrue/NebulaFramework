@@ -174,7 +174,7 @@ function CreateModuleRemotes(module: table)
     return moduleFolder;
 end
 
-function InitModule(moduleScript: ModuleScript, holder: table, normalModule: boolean)
+function InitModule(moduleScript: ModuleScript, holder: table, inheritedNormalModule: boolean)
     local response = require(moduleScript);
     local module = {
         Response = response,
@@ -189,7 +189,10 @@ function InitModule(moduleScript: ModuleScript, holder: table, normalModule: boo
         return;
     end
 
-    if (module.Type == "function") then
+    if (inheritedNormalModule or module.Attributes.NormalModule) then
+        HoistModule(module);
+
+    elseif (module.Type == "function") then
         if (StartingList) then
             table.insert(StartingList, module);
         else
@@ -197,32 +200,31 @@ function InitModule(moduleScript: ModuleScript, holder: table, normalModule: boo
         end
 
     elseif (module.Type == "table") then
-        if ((not normalModule) and (not module.Attributes.NormalModule)) then
-            module.ModuleRemotesFolder = CreateModuleRemotes(module);
-            Util.Inject(module, NebulaServer, Debug);
+        module.ModuleRemotesFolder = CreateModuleRemotes(module);
+        Util.Inject(module, NebulaServer, Debug);
 
-            if (response.Load) then
-                LoadModule(module)
-            end
+        if (response.Load) then
+            LoadModule(module)
+        end
 
-            if (HoistingList) then
-                table.insert(HoistingList, module);
+        if (HoistingList) then
+            table.insert(HoistingList, module);
+        else
+            HoistModule(module);
+        end
+
+        if (response.Start) then
+            if (StartingList) then
+                table.insert(StartingList, module);
             else
-                HoistModule(module);
-            end
-
-            if (response.Start) then
-                if (StartingList) then
-                    table.insert(StartingList, module);
-                else
-                    StartModule(module);
-                end
-            end
-
-            if (response.Update) then
-                table.insert(UpdateList, response);
+                StartModule(module);
             end
         end
+
+        if (response.Update) then
+            table.insert(UpdateList, response);
+        end
+
     else
         Debug:Warn(Debug.WarnMessages.WrongReturnType, module.Name, module.Type);
     end
@@ -242,9 +244,9 @@ end
 
 function InitContainers()
     local containers = {
-        {NebulaServer.Services.ServerScriptService, NebulaServer.Server, false},
-        {NebulaServer.Services.ServerStorage, NebulaServer.Storage, false},
         {NebulaServer.Services.ReplicatedStorage, NebulaServer.Replicated, true},
+        {NebulaServer.Services.ServerStorage, NebulaServer.Storage, false},
+        {NebulaServer.Services.ServerScriptService, NebulaServer.Server, false},
     };
 
     for _, container in ipairs(containers) do
