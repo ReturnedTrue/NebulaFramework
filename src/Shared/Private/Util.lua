@@ -29,6 +29,16 @@ function Util.Inject(module: table, injectionTable: table, debug: table)
     end
 end
 
+function Util.CloneTable(t: table)
+    local clone = {};
+
+    for key, value in pairs(t) do
+        clone[key] = value;
+    end
+
+    return clone;
+end
+
 function Util.Async(foo: any, ...: any)
     local success, message = coroutine.resume(coroutine.create(foo), ...);
 

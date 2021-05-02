@@ -38,12 +38,12 @@ function HoistModule(module: table)
         if (NebulaClient[module.Name]) then
             Debug:Warn(Debug.WarnMessages.TopLevelDenied, module.Name);
         else
-            NebulaClient[module.Name] = module.Response;
+            NebulaClient[module.Name] = module.PureResponse;
         end
     end
 
     if (module.Holder) then
-        module.Holder[module.Name] = module.Response;
+        module.Holder[module.Name] = module.PureResponse;
     end
 end
 
@@ -73,8 +73,8 @@ end
 
 function InitUpdateCycle()
     NebulaClient.Services.RunService.RenderStepped:Connect(function(deltaTime)
-        for _, module in ipairs(UpdateList) do
-            Util.Async(module.Response.Update, module.Response, deltaTime);
+        for _, response in ipairs(UpdateList) do
+            Util.Async(response.Update, response, deltaTime);
         end
     end)
 end
@@ -117,6 +117,7 @@ function InitModule(moduleScript: ModuleScript, holder: table, inheritedNormalMo
     local response = require(moduleScript);
     local module = {
         Response = response,
+        PureResponse = typeof(response) == "table" and Util.CloneTable(response) or response,
         Type = typeof(response),
         Holder = holder,
         Name = moduleScript.Name,
@@ -164,7 +165,7 @@ function InitModule(moduleScript: ModuleScript, holder: table, inheritedNormalMo
         end
 
     else
-        Debug:Warn(Debug.WarnMessages.WrongReturnType, module.Name, module.Type);
+        HoistModule(module);
     end
 end
 

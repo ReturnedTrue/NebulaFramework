@@ -4,23 +4,28 @@ ScriptObjectives.__index = ScriptObjectives;
 function ScriptObjectives.new(context: string, objectives: table)
     local self = setmetatable({}, ScriptObjectives);
 
+    self.Completed = false;
     self.Context = context;
+    self.Objectives = objectives;
     self.Results = {};
 
     for _, objective in ipairs(objectives) do
-        self.Results[objective] = { Bool = false, Time = false }
+        self.Results[objective] = { Bool = false, DidRun = false }
     end
 
     return self;
 end
 
 function ScriptObjectives:SetObjective(objectiveName: string, bool: boolean)
-    self.Results[objectiveName] = { Bool = bool, Time = os.time() };
+    self.Results[objectiveName] = { Bool = bool, DidRun = true };
 end
 
 function ScriptObjectives:OutputResults()
-    print("\n");
+    self.Completed = true;
+
+    print(" ");
     print("===== Results for", self.Context, "testing =====");
+    print(" ");
 
     local counts = {
         Success = 0,
@@ -28,14 +33,15 @@ function ScriptObjectives:OutputResults()
         NeverRan = 0
     };
 
-    for objectiveName, result in pairs(self.Results) do
+    for _, objectiveName in ipairs(self.Objectives) do
+        local result = self.Results[objectiveName];
         local resultString;
 
         if (result.Bool) then
             resultString = "SUCCESS";
             counts.Success += 1;
         else
-            if (result.Time == false) then
+            if (result.DidRun == false) then
                 resultString = "NEVER_RAN";
                 counts.NeverRan += 1;
             else
@@ -44,8 +50,8 @@ function ScriptObjectives:OutputResults()
             end
         end
 
-        local fullString = ("\t[%s] %s <%s>")
-            :format(resultString, objectiveName, result.Time and os.date("%X", result.Time) or "---");
+        local fullString = ("\t\t[%s] %s")
+            :format(resultString, objectiveName, result.Time or 0);
 
         if (result.Bool) then
             print(fullString);
@@ -54,11 +60,12 @@ function ScriptObjectives:OutputResults()
         end
     end
 
+    print(" ");
     print(
-        ("===== Success: %d | Error: %d | NeverRan: %d =====")
+        ("> Success: %d | Error: %d | NeverRan: %d")
             :format(counts.Success, counts.Error, counts.NeverRan)
     );
-    print("\n");
+    print(" ");
 end
 
 return ScriptObjectives;

@@ -13,6 +13,18 @@
       }
     },
 
+    "ServerStorage": {
+      "Nebula": {
+        "$path": "tests/Storage"
+      }
+    },
+
+    "ReplicatedFirst": {
+      "Nebula": {
+        "$path": "tests/ClientStorage"
+      }
+    },
+
     "StarterPlayer": {
       "StarterPlayerScripts": {
         "Nebula": {
